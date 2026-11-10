@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stock Aquino</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#39433A">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Stock Aquino">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script src="config.js"></script>
+<style>
+:root{--bg:#F3F5F1;--card:#fff;--sunk:#E9EDE6;--fg:#1D231E;--muted:#5F6A5C;--line:#D9DED4;--brand:#39433A;--accent:#5E9732;--bad:#B42318;--bads:#FBE1DE;--warn:#9A5B00;--warns:#FBEBCF;--in:#1F6FA8;--ins:#DCEAF5}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select{font:inherit;color:inherit}
+header{position:sticky;top:0;z-index:5;background:var(--brand);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;display:flex;flex-direction:column;gap:8px}
+.top{display:flex;align-items:center;gap:10px}
+.top h1{font-size:16px;margin:0;flex:1;font-weight:600;opacity:.9}
+.top small{opacity:.8;font-size:12px}
+.hb{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;padding:6px 10px;font-size:13px}
+#q{width:100%;border:0;border-radius:10px;padding:11px 12px;font-size:16px}
+.tabs{display:flex;gap:16px}
+.tabs button{background:none;border:0;color:rgba(255,255,255,.7);padding:4px 0;font-weight:600;border-bottom:3px solid transparent}
+.tabs button.on{color:#fff;border-bottom-color:var(--accent)}
+main{padding:12px 14px 80px;display:flex;flex-direction:column;gap:10px;max-width:900px;margin:0 auto}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:14px;white-space:nowrap}
+.chip.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+.grp{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.gh{background:var(--sunk);padding:7px 12px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;padding:11px 12px;border:0;border-top:1px solid var(--line);background:none;text-align:left}
+.row:first-of-type{border-top:0}
+.row .d{overflow-wrap:anywhere}
+.row .s{display:block;font-size:12px;color:var(--muted)}
+.qt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.qt small{font-weight:400;color:var(--muted);margin-left:3px;font-size:12px}
+.zero{color:var(--bad)} .low{color:var(--warn)}
+.more,.btn2{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px;font-weight:600}
+.empty{background:var(--card);border:1px dashed var(--line);border-radius:12px;padding:20px;color:var(--muted)}
+.fab{position:fixed;right:16px;bottom:16px;background:var(--accent);color:#fff;border:0;border-radius:999px;padding:14px 18px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-height:92%;overflow-y:auto;background:var(--card);border-radius:16px 16px 0 0;z-index:11;padding:16px 16px 28px;display:flex;flex-direction:column;gap:12px;max-width:640px;margin:0 auto}
+.sh{display:flex;gap:10px;align-items:flex-start}
+.sh h2{font-size:18px;margin:0;flex:1;overflow-wrap:anywhere}
+.x{border:0;background:var(--sunk);border-radius:8px;width:36px;height:36px;font-size:20px}
+.big{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums}
+.loc{color:var(--muted);font-size:14px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg button{border:2px solid var(--line);background:var(--card);border-radius:10px;padding:12px 4px;font-weight:700}
+.seg button.on.Saída{border-color:var(--bad);background:var(--bads);color:var(--bad)}
+.seg button.on.Entrada{border-color:var(--in);background:var(--ins);color:var(--in)}
+.seg button.on.Contagem{border-color:var(--accent);background:#E4EFDA;color:var(--accent)}
+label{font-size:13px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px}
+.inp{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:16px;background:#fff}
+.go{border:0;border-radius:12px;padding:15px;font-weight:800;font-size:17px;color:#fff;background:var(--accent)}
+.go.Saída{background:var(--bad)} .go.Entrada{background:var(--in)}
+.go:disabled{opacity:.5}
+.msg{padding:10px;border-radius:10px;font-size:14px}
+.msg.err{background:var(--bads);color:var(--bad)} .msg.ok{background:#E4EFDA;color:var(--accent)}
+.mv{padding:10px 12px;border-top:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px}
+.mv:first-of-type{border-top:0}
+.mv .m{font-size:12px;color:var(--muted)}
+.pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}
+.pill.Saída{background:var(--bads);color:var(--bad)} .pill.Entrada{background:var(--ins);color:var(--in)} .pill.Contagem{background:#E4EFDA;color:var(--accent)}
+.login{max-width:360px;margin:15vh auto 0;padding:24px;background:var(--card);border-radius:16px;border:1px solid var(--line);display:flex;flex-direction:column;gap:14px;text-align:center}
+.login h1{margin:0;font-size:22px;color:var(--brand)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:80px;background:var(--fg);color:#fff;padding:10px 16px;border-radius:10px;z-index:20;font-weight:600}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div id="login" class="login" hidden>
+  <img src="logo-aquino.png" alt="Aquino Construções" style="width:220px;max-width:80%;margin:0 auto">
+  <h1>Stock Armazém</h1>
+  <input id="pin" class="inp" type="password" inputmode="numeric" placeholder="PIN" autocomplete="off" style="text-align:center;font-size:22px;letter-spacing:.3em">
+  <button class="go" id="btnEntrar">Entrar</button>
+  <div id="loginMsg"></div>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <div class="top"><img src="logo-branco.png" alt="Aquino" style="height:20px"><h1>Stock</h1><small id="quem"></small><button class="hb" id="btnAtualizar">↻</button><button class="hb" id="btnSair">Sair</button></div>
+    <input id="q" type="search" placeholder="Procurar artigo, DN, rack…" autocomplete="off">
+    <div class="tabs"><button id="tStock" class="on">Stock</button><button id="tInv">Inventário</button><button id="tMov">Movimentos</button></div>
+  </header>
+  <main id="main"><div class="empty">A carregar artigos…</div></main>
+  <button class="fab" id="btnNovo">+ Artigo</button>
+</div>
+<div id="ov"></div>
+<datalist id="obras"></datalist>
+
+<script>
+const ART_INICIAL = new URLSearchParams(location.search).get('a') || '';
+const ARMS = ['Armazém 1','Armazém 2','Estaleiro','Parafusaria'];
+const S = {pin:'', nome:'', art:[], movs:[], tab:'stock', arm:'Todos', so:'', q:'', lim:150, sel:null, tipo:'Saída', busy:false, msg:null, inv:{arm:'Armazém 1', zona:'', i:0, feitos:{}, msg:null, busy:false}};
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const fmt = n => { n = Number(n)||0; return Number.isInteger(n) ? n.toLocaleString('pt-PT') : n.toLocaleString('pt-PT',{maximumFractionDigits:2}); };
+async function run(acao, ...args){
+  if (!window.API_URL || API_URL.indexOf('script.google.com') < 0) throw new Error('A app ainda não está ligada ao servidor (config.js).');
+  let r;
+  try { r = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({acao, args})}); }
+  catch(e){ throw new Error('Sem ligação à internet. Tente de novo.'); }
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.erro || 'Erro no servidor');
+  return j.data;
+}
+const loc = a => a.a === 'Armazém 1' ? (a.z + (a.l ? ' · Linha ' + a.l : '')) : (a.z || a.a);
+const est = a => a.q <= 0 ? 'zero' : (a.m > 0 && a.q <= a.m ? 'low' : '');
+function toast(t){ const d=document.createElement('div'); d.className='toast'; d.textContent=t; document.body.appendChild(d); setTimeout(()=>d.remove(),2500); }
+function guardaPin(p){ try{ p ? localStorage.setItem('pin',p) : localStorage.removeItem('pin'); }catch(e){} }
+function lePin(){ try{ return localStorage.getItem('pin')||''; }catch(e){ return ''; } }
+
+async function entrar(pin){
+  $('loginMsg').innerHTML = '';
+  try {
+    S.nome = await run('entrar', pin); S.pin = pin; guardaPin(pin);
+    $('login').hidden = true; $('app').hidden = false; $('quem').textContent = S.nome;
+    await carregar();
+    if (ART_INICIAL) abrir(ART_INICIAL);
+  } catch(e) {
+    guardaPin(''); $('login').hidden = false; $('app').hidden = true;
+    $('loginMsg').innerHTML = '<div class="msg err">' + esc(e.message || 'Erro ao entrar') + '</div>';
+  }
+}
+async function carregar(){
+  try {
+    const d = await run('obterDados', S.pin);
+    S.art = d.artigos; S.movs = d.movs;
+    const ob = new Set(S.movs.map(m => m.o).filter(Boolean));
+    $('obras').innerHTML = [...ob].sort().map(o => '<option value="'+esc(o)+'">').join('');
+    render();
+  } catch(e) { $('main').innerHTML = '<div class="msg err">' + esc(e.message) + '</div>'; }
+}
+
+function render(){
+  $('tStock').className = S.tab==='stock' ? 'on' : ''; $('tMov').className = S.tab==='mov' ? 'on' : ''; $('tInv').className = S.tab==='inv' ? 'on' : '';
+  $('btnNovo').hidden = S.tab !== 'stock';
+  $('q').hidden = S.tab === 'inv';
+  if (S.tab === 'inv') { $('main').innerHTML = vInv(); ligaInv(); return; }
+  $('main').innerHTML = S.tab === 'stock' ? vStock() : vMov();
+  document.querySelectorAll('[data-arm]').forEach(b => b.onclick = () => { S.arm = b.dataset.arm; S.lim = 150; render(); });
+  document.querySelectorAll('[data-so]').forEach(b => b.onclick = () => { S.so = S.so === b.dataset.so ? '' : b.dataset.so; S.lim = 150; render(); });
+  document.querySelectorAll('[data-c]').forEach(b => b.onclick = () => abrir(b.dataset.c));
+  const m = $('mais'); if (m) m.onclick = () => { S.lim += 150; render(); };
+}
+function vStock(){
+  const t = norm(S.q).split(/\s+/).filter(Boolean);
+  let l = S.art.filter(a => (S.arm==='Todos' || a.a===S.arm) && (!S.so || est(a)===S.so));
+  if (t.length) l = l.filter(a => { const h = norm(a.c+' '+a.d+' '+a.a+' '+loc(a)+' '+a.n); return t.every(x => h.includes(x)); });
+  const nz = S.art.filter(a => est(a)==='zero').length, nl = S.art.filter(a => est(a)==='low').length;
+  let h = '<div class="chips">' + ['Todos'].concat(ARMS).map(a => '<button class="chip'+(S.arm===a?' on':'')+'" data-arm="'+esc(a)+'">'+esc(a)+'</button>').join('')
+    + '<button class="chip'+(S.so==='zero'?' on':'')+'" data-so="zero">Sem stock ('+nz+')</button>'
+    + '<button class="chip'+(S.so==='low'?' on':'')+'" data-so="low">No mínimo ('+nl+')</button></div>';
+  if (!l.length) return h + '<div class="empty">Nenhum artigo encontrado.</div>';
+  let cur = '', open = false;
+  l.slice(0, S.lim).forEach(a => {
+    const g = a.a + ' · ' + loc(a);
+    if (g !== cur) { if (open) h += '</div>'; h += '<div class="grp"><div class="gh">'+esc(g)+'</div>'; cur = g; open = true; }
+    h += '<button class="row" data-c="'+esc(a.c)+'"><span class="d">'+esc(a.d)+'<span class="s">'+esc(a.c)+(a.n?' · '+esc(a.n):'')+'</span></span>'
+      + '<span class="qt '+est(a)+'">'+fmt(a.q)+'<small>'+esc(a.u)+'</small></span></button>';
+  });
+  if (open) h += '</div>';
+  if (l.length > S.lim) h += '<button class="more" id="mais">Mostrar mais ('+(l.length-S.lim)+')</button>';
+  return h;
+}
+function vMov(){
+  const t = norm(S.q).split(/\s+/).filter(Boolean);
+  let l = S.movs; if (t.length) l = l.filter(m => { const h = norm(m.c+' '+m.d+' '+m.o+' '+m.u+' '+m.tp); return t.every(x => h.includes(x)); });
+  if (!l.length) return '<div class="empty">Ainda não há movimentos.</div>';
+  return '<div class="grp">' + l.map(m => {
+    const d = new Date(m.t), sg = m.tp==='Saída' ? '−' : m.tp==='Entrada' ? '+' : '=';
+    return '<div class="mv"><div>'+esc(m.d)+'<div class="m">'+d.toLocaleDateString('pt-PT')+' '+d.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'})+' · '+esc(m.u)+(m.o?' · obra '+esc(m.o):'')+(m.nt?' · '+esc(m.nt):'')+'</div></div>'
+      + '<div style="text-align:right"><span class="pill '+esc(m.tp)+'">'+esc(m.tp)+'</span><div class="qt">'+sg+fmt(m.q)+'</div><div class="m">'+fmt(m.an)+' → '+fmt(m.dp)+'</div></div></div>';
+  }).join('') + '</div>';
+}
+
+function abrir(c){ const a = S.art.find(x => x.c === c); if (!a) { toast('Artigo '+c+' não encontrado'); return; } S.sel = c; S.tipo = 'Saída'; S.msg = null; painel(); }
+function fechar(){ S.sel = null; $('ov').innerHTML = ''; }
+function painel(){
+  const a = S.art.find(x => x.c === S.sel); if (!a) return fechar();
+  const hist = S.movs.filter(m => m.c === a.c).slice(0, 5);
+  $('ov').innerHTML = '<div class="scrim" id="scrim"></div><div class="sheet">'
+    + '<div class="sh"><h2>'+esc(a.d)+'</h2><button class="x" id="fx">×</button></div>'
+    + '<div><span class="big '+est(a)+'">'+fmt(a.q)+'</span> '+esc(a.u)+'<div class="loc">'+esc(a.c)+' · '+esc(a.a)+' · '+esc(loc(a))+(a.m?' · mínimo '+fmt(a.m):'')+'</div></div>'
+    + '<div class="seg">'+['Saída','Entrada','Contagem'].map(t => '<button class="'+t+(S.tipo===t?' on':'')+'" data-t="'+t+'">'+t+'</button>').join('')+'</div>'
+    + '<div><label>'+(S.tipo==='Contagem'?'Quantidade contada':'Quantidade')+' ('+esc(a.u)+')</label><input class="inp" id="fq" type="number" inputmode="decimal" step="any" min="0"></div>'
+    + (S.tipo==='Contagem' ? '' : '<div><label>'+(S.tipo==='Saída'?'Obra de destino':'Origem (obra ou fornecedor)')+'</label><input class="inp" id="fo" list="obras" placeholder="ex.: 1698"></div>')
+    + '<div><label>Nota (opcional)</label><input class="inp" id="fn" placeholder="guia, viatura, motivo…"></div>'
+    + (S.msg ? '<div class="msg '+S.msg[0]+'">'+esc(S.msg[1])+'</div>' : '')
+    + '<button class="go '+S.tipo+'" id="fg"'+(S.busy?' disabled':'')+'>'+(S.busy?'A gravar…':'Gravar '+S.tipo.toLowerCase())+'</button>'
+    + (hist.length ? '<div><label>Últimos movimentos</label>'+hist.map(m => '<div class="loc">'+new Date(m.t).toLocaleDateString('pt-PT')+' · '+esc(m.tp)+' '+fmt(m.q)+(m.o?' · '+esc(m.o):'')+' · '+esc(m.u)+'</div>').join('')+'</div>' : '')
+    + '</div>';
+  $('scrim').onclick = fechar; $('fx').onclick = fechar;
+  document.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { S.tipo = b.dataset.t; S.msg = null; painel(); $('fq').focus(); });
+  $('fg').onclick = gravar;
+}
+async function gravar(){
+  const a = S.art.find(x => x.c === S.sel);
+  const q = $('fq').value, o = $('fo') ? $('fo').value : '', n = $('fn').value;
+  S.busy = true; S.msg = null; painel(); $('fq').value = q; if ($('fo')) $('fo').value = o; $('fn').value = n;
+  try {
+    const r = await run('registar', S.pin, a.c, S.tipo, q, o, n);
+    a.q = r.depois;
+    S.movs.unshift({t:new Date().toISOString(), c:a.c, d:a.d, tp:S.tipo, q:Number(String(q).replace(',','.')), an:r.antes, dp:r.depois, o:o, nt:n, u:S.nome});
+    S.busy = false; S.msg = ['ok', S.tipo+' gravada: '+fmt(r.antes)+' → '+fmt(r.depois)+' '+a.u]; painel(); render();
+  } catch(e) {
+    S.busy = false; S.msg = ['err', e.message || 'Erro ao gravar']; painel(); $('fq').value = q; if ($('fo')) $('fo').value = o; $('fn').value = n;
+  }
+}
+function novo(){
+  $('ov').innerHTML = '<div class="scrim" id="scrim"></div><div class="sheet"><div class="sh"><h2>Novo artigo</h2><button class="x" id="fx">×</button></div>'
+    + '<div><label>Descrição</label><input class="inp" id="nd"></div>'
+    + '<div><label>Armazém</label><select class="inp" id="na">'+ARMS.map(a=>'<option>'+a+'</option>').join('')+'</select></div>'
+    + '<div><label>Zona (ex.: Rack 12, Palete 3)</label><input class="inp" id="nz"></div>'
+    + '<div><label>Linha (A a F)</label><input class="inp" id="nl" maxlength="3"></div>'
+    + '<div><label>Quantidade inicial</label><input class="inp" id="nq" type="number" inputmode="decimal" value="0"></div>'
+    + '<div><label>Unidade</label><input class="inp" id="nu" value="un"></div>'
+    + '<div id="nm"></div><button class="go" id="ng">Criar artigo</button></div>';
+  $('scrim').onclick = fechar; $('fx').onclick = fechar;
+  $('ng').onclick = async () => {
+    $('ng').disabled = true;
+    try {
+      const c = await run('novoArtigo', S.pin, {d:$('nd').value, a:$('na').value, z:$('nz').value, l:$('nl').value, q:$('nq').value, u:$('nu').value});
+      fechar(); toast('Artigo '+c+' criado'); await carregar();
+    } catch(e) { $('nm').innerHTML = '<div class="msg err">'+esc(e.message)+'</div>'; $('ng').disabled = false; }
+  };
+}
+
+
+/* ---------- Modo inventário ---------- */
+function zonasDe(arm){ return [...new Set(S.art.filter(a => a.a === arm).map(a => a.z + (a.l ? '|' + a.l : '')))].sort((x,y) => x.localeCompare(y,'pt',{numeric:true})); }
+function listaInv(){ const I = S.inv; if (!I.zona) return []; const [z,l] = I.zona.split('|'); return S.art.filter(a => a.a === I.arm && a.z === z && (a.l||'') === (l||'')); }
+function vInv(){
+  const I = S.inv, zs = zonasDe(I.arm);
+  let h = '<div class="grp" style="padding:12px;display:flex;flex-direction:column;gap:10px">'
+    + '<div><label>Armazém</label><select class="inp" id="iArm">'+ARMS.map(a=>'<option'+(a===I.arm?' selected':'')+'>'+a+'</option>').join('')+'</select></div>'
+    + '<div><label>Rack / zona a contar</label><select class="inp" id="iZona"><option value="">— escolher —</option>'
+    + zs.map(z => { const [zz,l] = z.split('|'); const n = S.art.filter(a=>a.a===I.arm&&a.z===zz&&(a.l||'')===(l||'')).length; const f = S.art.filter(a=>a.a===I.arm&&a.z===zz&&(a.l||'')===(l||'')&&I.feitos[a.c]).length;
+        return '<option value="'+esc(z)+'"'+(z===I.zona?' selected':'')+'>'+esc(zz+(l?' · Linha '+l:''))+' ('+f+'/'+n+')</option>'; }).join('')
+    + '</select></div></div>';
+  const L = listaInv();
+  if (!I.zona) return h + '<div class="empty">Escolha o rack (ou palete/zona) que vai contar. A app mostra os artigos um a um: escreve a quantidade que lá está e passa ao seguinte.</div>';
+  const feitos = L.filter(a => I.feitos[a.c]).length;
+  h += '<div class="loc" style="text-align:center">'+feitos+' de '+L.length+' contados nesta zona</div>';
+  if (I.i >= L.length) return h + '<div class="empty" style="text-align:center"><b>Zona terminada.</b><br>Escolha a próxima zona na lista acima.<br><br><button class="btn2" id="iNovo">+ Artigo que não estava na lista</button></div>';
+  const a = L[I.i];
+  h += '<div class="grp" style="padding:14px;display:flex;flex-direction:column;gap:10px">'
+    + '<div class="loc">Artigo '+(I.i+1)+' de '+L.length+' · '+esc(a.c)+(I.feitos[a.c]?' · já contado':'')+'</div>'
+    + '<div style="font-size:18px;font-weight:700;overflow-wrap:anywhere">'+esc(a.d)+'</div>'
+    + '<div class="loc">Na lista: <b>'+fmt(a.q)+' '+esc(a.u)+'</b></div>'
+    + '<div><label>Quantidade contada ('+esc(a.u)+')</label><input class="inp" id="iQ" type="number" inputmode="decimal" step="any" min="0" style="font-size:22px"></div>'
+    + (I.msg ? '<div class="msg '+I.msg[0]+'">'+esc(I.msg[1])+'</div>' : '')
+    + '<button class="go" id="iGo"'+(I.busy?' disabled':'')+'>'+(I.busy?'A gravar…':'Gravar e seguinte')+'</button>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn2" id="iAnt"'+(I.i===0?' disabled':'')+'>← Anterior</button><button class="btn2" id="iSalta">Saltar →</button></div>'
+    + '<button class="btn2" id="iIgual">Está certo: '+fmt(a.q)+' '+esc(a.u)+'</button>'
+    + '</div><button class="btn2" id="iNovo">+ Artigo que não estava na lista</button>';
+  return h;
+}
+function ligaInv(){
+  const I = S.inv;
+  $('iArm').onchange = e => { I.arm = e.target.value; I.zona = ''; I.i = 0; I.msg = null; render(); };
+  $('iZona').onchange = e => { I.zona = e.target.value; I.i = 0; I.msg = null; render(); };
+  const L = listaInv(), a = L[I.i];
+  const nv = $('iNovo'); if (nv) nv.onclick = () => { novo(); const [z,l] = (I.zona||'').split('|'); setTimeout(() => { $('na').value = I.arm; $('nz').value = z||''; $('nl').value = l||''; }, 0); };
+  if (!a) return;
+  const q = $('iQ'); q.focus();
+  q.onkeydown = e => { if (e.key === 'Enter') contar(q.value); };
+  $('iGo').onclick = () => contar(q.value);
+  $('iIgual').onclick = () => contar(String(a.q));
+  $('iSalta').onclick = () => { I.i++; I.msg = null; render(); };
+  $('iAnt').onclick = () => { if (I.i > 0) { I.i--; I.msg = null; render(); } };
+  async function contar(v){
+    if (String(v).trim() === '') { I.msg = ['err','Escreva a quantidade contada (pode ser 0).']; render(); return; }
+    I.busy = true; I.msg = null; render();
+    try {
+      const r = await run('registar', S.pin, a.c, 'Contagem', v, '', 'Inventário');
+      a.q = r.depois; I.feitos[a.c] = true;
+      S.movs.unshift({t:new Date().toISOString(), c:a.c, d:a.d, tp:'Contagem', q:r.depois, an:r.antes, dp:r.depois, o:'', nt:'Inventário', u:S.nome});
+      I.busy = false; I.msg = ['ok', a.d.slice(0,40)+': '+fmt(r.antes)+' → '+fmt(r.depois)]; I.i++; render();
+    } catch(e) { I.busy = false; I.msg = ['err', e.message || 'Erro ao gravar']; render(); }
+  }
+}
+
+$('btnEntrar').onclick = () => entrar($('pin').value.trim());
+$('pin').onkeydown = e => { if (e.key === 'Enter') entrar($('pin').value.trim()); };
+$('btnSair').onclick = () => { guardaPin(''); location.reload(); };
+$('btnAtualizar').onclick = () => { carregar(); toast('Atualizado'); };
+$('btnNovo').onclick = novo;
+$('tStock').onclick = () => { S.tab = 'stock'; render(); };
+$('tMov').onclick = () => { S.tab = 'mov'; render(); };
+$('tInv').onclick = () => { S.tab = 'inv'; render(); };
+let qT; $('q').oninput = e => { clearTimeout(qT); qT = setTimeout(() => { S.q = e.target.value; S.lim = 150; render(); }, 150); };
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+if (ART_INICIAL) history.replaceState(null, '', location.pathname);
+const p = lePin(); if (p) entrar(p); else $('login').hidden = false;
+</script>
+</body>
+</html>

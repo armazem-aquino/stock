@@ -1,0 +1,16 @@
+{
+  "name": "Stock Armazém Aquino",
+  "short_name": "Stock Aquino",
+  "description": "Saídas, entradas e contagens do armazém da Aquino Construções",
+  "lang": "pt-PT",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F3F5F1",
+  "theme_color": "#39433A",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}
