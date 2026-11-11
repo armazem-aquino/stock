@@ -93,7 +93,7 @@ window.loadData=async function(){
   let pin='';try{pin=localStorage.getItem('pin')||''}catch(e){}
   if(!pin)pin=await ask('Entre com o mesmo PIN da app.');
   for(;;){
-    try{const r=await (await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({acao:'obterDados',args:[pin]})})).json();
+    try{const r=await (await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({acao:'obterDados',args:[pin],dev:(()=>{try{let d=localStorage.getItem('dev');if(!d){d=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now());localStorage.setItem('dev',d)}return d}catch(e){return ''}})()})})).json();
       if(r.ok){try{localStorage.setItem('pin',pin)}catch(e){}return r.data.artigos}
       pin=await ask(r.erro||'PIN inválido. Tente outra vez.');}
     catch(e){pin=await ask('Sem ligação ao servidor. Verifique a internet e tente outra vez.')}

@@ -113,7 +113,7 @@ const fmt = n => { n = Number(n)||0; return Number.isInteger(n) ? n.toLocaleStri
 async function run(acao, ...args){
   if (!window.API_URL || API_URL.indexOf('script.google.com') < 0) throw new Error('A app ainda não está ligada ao servidor (config.js).');
   let r;
-  try { r = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({acao, args})}); }
+  try { r = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({acao, args, dev: (()=>{try{let d=localStorage.getItem('dev');if(!d){d=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now());localStorage.setItem('dev',d)}return d}catch(e){return ''}})()})}); }
   catch(e){ throw new Error('Sem ligação à internet. Tente de novo.'); }
   const j = await r.json();
   if (!j.ok) throw new Error(j.erro || 'Erro no servidor');
