@@ -47,7 +47,7 @@ main{padding:12px 14px 80px;display:flex;flex-direction:column;gap:10px;max-widt
 .qt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 .qt small{font-weight:400;color:var(--muted);margin-left:3px;font-size:12px}
 .zero{color:var(--bad)} .low{color:var(--warn)}
-.niv{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.niv .on{background:var(--accent);border-color:var(--accent);color:#fff}
+.niv{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px}.niv .on{background:var(--accent);border-color:var(--accent);color:#fff}
 .more,.btn2{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px;font-weight:600}
 .empty{background:var(--card);border:1px dashed var(--line);border-radius:12px;padding:20px;color:var(--muted)}
 .fab{position:fixed;right:16px;bottom:16px;background:var(--accent);color:#fff;border:0;border-radius:999px;padding:14px 18px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.2)}
@@ -119,8 +119,8 @@ async function run(acao, ...args){
   if (!j.ok) throw new Error(j.erro || 'Erro no servidor');
   return j.data;
 }
-const nivTxt = v => v ? (v === 'Chão' ? 'Chão' : 'Nível ' + v) : '';
-const loc = a => (a.a === 'Armazém 1' ? (a.z + (a.l ? ' · Linha ' + a.l : '')) : (a.z || a.a)) + (a.v ? ' · ' + nivTxt(a.v) : '');
+const nivTxt = (v, arm) => v ? (v === 'Chão' ? 'Chão' : (arm === 'Estaleiro' ? 'Patamar ' : 'Nível ') + v) : '';
+const loc = a => (a.a === 'Armazém 1' ? (a.z + (a.l ? ' · Linha ' + a.l : '')) : (a.z || a.a)) + (a.v ? ' · ' + nivTxt(a.v, a.a) : '');
 const est = a => a.q <= 0 ? 'zero' : (a.m > 0 && a.q <= a.m ? 'low' : '');
 function toast(t){ const d=document.createElement('div'); d.className='toast'; d.textContent=t; document.body.appendChild(d); setTimeout(()=>d.remove(),2500); }
 function guardaPin(p){ try{ p ? localStorage.setItem('pin',p) : localStorage.removeItem('pin'); }catch(e){} }
@@ -266,7 +266,7 @@ function vInv(){
     + '<div style="font-size:18px;font-weight:700;overflow-wrap:anywhere">'+esc(a.d)+'</div>'
     + '<div class="loc">Na lista: <b>'+fmt(a.q)+' '+esc(a.u)+'</b></div>'
     + '<div><label>Quantidade contada ('+esc(a.u)+')</label><input class="inp" id="iQ" type="number" inputmode="decimal" step="any" min="0" style="font-size:22px"></div>'
-    + '<div><label>Nível (toque para marcar)</label><div class="niv" id="iNiv">' + ['Chão','1','2','3'].map(n => '<button type="button" class="btn2' + (I.nv === n ? ' on' : '') + '" data-n="' + n + '">' + n + '</button>').join('') + '</div></div>'
+    + '<div><label>' + (I.arm === 'Estaleiro' ? 'Patamar' : 'Nível') + ' (toque para marcar)</label><div class="niv" id="iNiv">' + (I.arm === 'Estaleiro' ? ['1','2','3'] : ['Chão','1','2','3']).map(n => '<button type="button" class="btn2' + (I.nv === n ? ' on' : '') + '" data-n="' + n + '">' + n + '</button>').join('') + '</div></div>'
     + (I.msg ? '<div class="msg '+I.msg[0]+'">'+esc(I.msg[1])+'</div>' : '')
     + '<button class="go" id="iGo"'+(I.busy?' disabled':'')+'>'+(I.busy?'A gravar…':'Gravar e seguinte')+'</button>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn2" id="iAnt"'+(I.i===0?' disabled':'')+'>← Anterior</button><button class="btn2" id="iSalta">Saltar →</button></div>'
