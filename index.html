@@ -47,6 +47,7 @@ main{padding:12px 14px 80px;display:flex;flex-direction:column;gap:10px;max-widt
 .qt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 .qt small{font-weight:400;color:var(--muted);margin-left:3px;font-size:12px}
 .zero{color:var(--bad)} .low{color:var(--warn)}
+.niv{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.niv .on{background:var(--accent);border-color:var(--accent);color:#fff}
 .more,.btn2{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px;font-weight:600}
 .empty{background:var(--card);border:1px dashed var(--line);border-radius:12px;padding:20px;color:var(--muted)}
 .fab{position:fixed;right:16px;bottom:16px;background:var(--accent);color:#fff;border:0;border-radius:999px;padding:14px 18px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.2)}
@@ -118,7 +119,8 @@ async function run(acao, ...args){
   if (!j.ok) throw new Error(j.erro || 'Erro no servidor');
   return j.data;
 }
-const loc = a => a.a === 'Armazém 1' ? (a.z + (a.l ? ' · Linha ' + a.l : '')) : (a.z || a.a);
+const nivTxt = v => v ? (v === 'Chão' ? 'Chão' : 'Nível ' + v) : '';
+const loc = a => (a.a === 'Armazém 1' ? (a.z + (a.l ? ' · Linha ' + a.l : '')) : (a.z || a.a)) + (a.v ? ' · ' + nivTxt(a.v) : '');
 const est = a => a.q <= 0 ? 'zero' : (a.m > 0 && a.q <= a.m ? 'low' : '');
 function toast(t){ const d=document.createElement('div'); d.className='toast'; d.textContent=t; document.body.appendChild(d); setTimeout(()=>d.remove(),2500); }
 function guardaPin(p){ try{ p ? localStorage.setItem('pin',p) : localStorage.removeItem('pin'); }catch(e){} }
@@ -258,11 +260,13 @@ function vInv(){
   h += '<div class="loc" style="text-align:center">'+feitos+' de '+L.length+' contados nesta zona</div>';
   if (I.i >= L.length) return h + '<div class="empty" style="text-align:center"><b>Zona terminada.</b><br>Escolha a próxima zona na lista acima.<br><br><button class="btn2" id="iNovo">+ Artigo que não estava na lista</button></div>';
   const a = L[I.i];
+  if (I.nvFor !== a.c) { I.nvFor = a.c; I.nv = a.v || ''; }
   h += '<div class="grp" style="padding:14px;display:flex;flex-direction:column;gap:10px">'
     + '<div class="loc">Artigo '+(I.i+1)+' de '+L.length+' · '+esc(a.c)+(I.feitos[a.c]?' · já contado':'')+'</div>'
     + '<div style="font-size:18px;font-weight:700;overflow-wrap:anywhere">'+esc(a.d)+'</div>'
     + '<div class="loc">Na lista: <b>'+fmt(a.q)+' '+esc(a.u)+'</b></div>'
     + '<div><label>Quantidade contada ('+esc(a.u)+')</label><input class="inp" id="iQ" type="number" inputmode="decimal" step="any" min="0" style="font-size:22px"></div>'
+    + '<div><label>Nível (toque para marcar)</label><div class="niv" id="iNiv">' + ['Chão','1','2','3'].map(n => '<button type="button" class="btn2' + (I.nv === n ? ' on' : '') + '" data-n="' + n + '">' + n + '</button>').join('') + '</div></div>'
     + (I.msg ? '<div class="msg '+I.msg[0]+'">'+esc(I.msg[1])+'</div>' : '')
     + '<button class="go" id="iGo"'+(I.busy?' disabled':'')+'>'+(I.busy?'A gravar…':'Gravar e seguinte')+'</button>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn2" id="iAnt"'+(I.i===0?' disabled':'')+'>← Anterior</button><button class="btn2" id="iSalta">Saltar →</button></div>'
@@ -279,6 +283,7 @@ function ligaInv(){
   if (!a) return;
   const q = $('iQ'); q.focus();
   q.onkeydown = e => { if (e.key === 'Enter') contar(q.value); };
+  $('iNiv').querySelectorAll('button').forEach(b => b.onclick = () => { I.nv = I.nv === b.dataset.n ? '' : b.dataset.n; $('iNiv').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.n === I.nv)); });
   $('iGo').onclick = () => contar(q.value);
   $('iIgual').onclick = () => contar(String(a.q));
   $('iSalta').onclick = () => { I.i++; I.msg = null; render(); };
@@ -287,8 +292,8 @@ function ligaInv(){
     if (String(v).trim() === '') { I.msg = ['err','Escreva a quantidade contada (pode ser 0).']; render(); return; }
     I.busy = true; I.msg = null; render();
     try {
-      const r = await run('registar', S.pin, a.c, 'Contagem', v, '', 'Inventário');
-      a.q = r.depois; I.feitos[a.c] = true;
+      const r = await run('registar', S.pin, a.c, 'Contagem', v, '', 'Inventário', I.nv || '');
+      a.q = r.depois; if (I.nv) a.v = I.nv; I.feitos[a.c] = true;
       S.movs.unshift({t:new Date().toISOString(), c:a.c, d:a.d, tp:'Contagem', q:r.depois, an:r.antes, dp:r.depois, o:'', nt:'Inventário', u:S.nome});
       I.busy = false; I.msg = ['ok', a.d.slice(0,40)+': '+fmt(r.antes)+' → '+fmt(r.depois)]; I.i++; render();
     } catch(e) { I.busy = false; I.msg = ['err', e.message || 'Erro ao gravar']; render(); }
