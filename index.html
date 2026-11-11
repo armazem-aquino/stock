@@ -104,7 +104,7 @@ label{font-size:13px;font-weight:600;color:var(--muted);display:block;margin-bot
 
 <script>
 const ART_INICIAL = new URLSearchParams(location.search).get('a') || '';
-const ARMS = ['Armazém 1','Armazém 2','Estaleiro','Parafusaria'];
+const ARMS = ['Armazém 1','Armazém 2','Armazém DIE','Estaleiro','Parafusaria'];
 const S = {pin:'', nome:'', art:[], movs:[], tab:'stock', arm:'Todos', so:'', q:'', lim:150, sel:null, tipo:'Saída', busy:false, msg:null, inv:{arm:'Armazém 1', zona:'', i:0, feitos:{}, msg:null, busy:false}};
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
