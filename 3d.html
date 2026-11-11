@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Armazém 3D Aquino</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: barra de topo + cena 3D a toda a largura + painel lateral de detalhe (empilha em telemóvel) */
+:root{
+  --bg:#F3F5F1; --surface:#FFFFFF; --fg:#1F2620; --muted:#5D6A5F; --line:#D8DFD4;
+  --brand:#39433A; --accent:#5E9732; --accent-soft:#E6F0DC; --warn:#C0392B; --hi:#F2B705;
+  --scene:#E9EDE5; --font:"Inter",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#161B17; --surface:#1F2620; --fg:#E8EEE6; --muted:#9AA79C; --line:#2F3A31;
+  --brand:#2A322B; --accent:#7DBA4A; --accent-soft:#26331F; --warn:#E06656; --hi:#F5C53A; --scene:#1A201B; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#161B17; --surface:#1F2620; --fg:#E8EEE6; --muted:#9AA79C; --line:#2F3A31;
+  --brand:#2A322B; --accent:#7DBA4A; --accent-soft:#26331F; --warn:#E06656; --hi:#F5C53A; --scene:#1A201B; color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);display:flex;flex-direction:column}
+header{background:var(--brand);color:#fff;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.logo{background:#fff;border-radius:6px;padding:4px 8px;display:flex}
+.logo img{height:26px;width:auto}
+header h1{font-size:17px;font-weight:600;margin:0;letter-spacing:.01em}
+.tag{font-size:11px;text-transform:uppercase;letter-spacing:.08em;background:var(--accent);color:#fff;border-radius:4px;padding:3px 7px}
+.tools{padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;gap:10px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line);background:var(--surface)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:8px;padding:8px 12px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.tabs button:focus-visible,#q:focus-visible,.res button:focus-visible{outline:2px solid var(--hi);outline-offset:2px}
+#q{font:inherit;font-size:15px;flex:1 1 240px;min-width:0;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+.legend{display:flex;gap:12px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+main{flex:1;display:grid;grid-template-columns:1fr 340px;min-height:0}
+#scene{position:relative;min-height:0;background:var(--scene)}
+#scene canvas{display:block;width:100%;height:100%;touch-action:none}
+.hint{position:absolute;left:12px;bottom:12px;font-size:12px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:5px 8px;pointer-events:none}
+aside{border-left:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;min-height:0;min-width:0}
+.ph{padding:14px 16px;border-bottom:1px solid var(--line)}
+.ph .k{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.ph h2{margin:4px 0 0;font-size:18px;text-wrap:balance}
+.ph p{margin:4px 0 0;font-size:13px;color:var(--muted)}
+.res{overflow:auto;flex:1;min-height:0}
+.res button{all:unset;box-sizing:border-box;display:grid;grid-template-columns:1fr auto;gap:2px 10px;width:100%;padding:10px 16px;border-bottom:1px solid var(--line);cursor:pointer}
+.res button:hover{background:var(--accent-soft)}
+.res .d{font-size:13px;font-weight:500;line-height:1.3}
+.res .q{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.res .q.zero{color:var(--warn)}
+.res .m{font-size:11.5px;color:var(--muted);grid-column:1/-1}
+.empty{padding:16px;color:var(--muted);font-size:13px}
+@media (max-width:820px){main{grid-template-columns:1fr;grid-template-rows:56vh auto}aside{border-left:0;border-top:1px solid var(--line)}.res{max-height:none}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+#pinbox{position:fixed;inset:0;background:rgba(20,26,21,.6);display:grid;place-items:center;z-index:50;padding:16px}#pinbox .pb{background:var(--surface);color:var(--fg);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:10px;width:min(320px,100%)}#pinbox p{margin:0;color:var(--muted);font-size:14px}#pinbox input{font:inherit;font-size:18px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}#pinbox button{font:inherit;font-weight:600;padding:11px;border:0;border-radius:8px;background:var(--accent);color:#fff}
+</style>
+
+</head><body>
+<header>
+  <span class="logo"><img alt="Aquino Construções" src="logo-aquino.png"></span>
+  <h1>Armazém 3D</h1>
+  <span class="tag">Ensaio</span><a href="./" style="margin-left:auto;color:#fff;font-size:14px">← Voltar à app</a>
+</header>
+<div class="tools">
+  <div class="tabs" id="tabs" role="group" aria-label="Armazém"></div>
+  <input id="q" type="search" placeholder="Procurar artigo (ex.: flange DN400, A0123)" autocomplete="off">
+  <div class="legend"><span><i style="background:#5E9732"></i>Com stock</span><span><i style="background:#C0392B"></i>Sem stock</span><span><i style="background:#F2B705"></i>Encontrado</span></div>
+</div>
+<main>
+  <div id="scene"><div class="hint">Arrastar para rodar · roda/pinça para zoom · tocar num rack para ver o que tem</div></div>
+  <aside>
+    <div class="ph"><div class="k" id="pk">Armazém</div><h2 id="ph"></h2><p id="pp"></p></div>
+    <div class="res" id="res"></div>
+  </aside>
+</main>
+
+<script src="config.js"></script>
+<script>
+window.loadData=async function(){
+  const ask=msg=>new Promise(res=>{const o=document.createElement('div');o.id='pinbox';o.innerHTML='<div class="pb"><b>Armazém 3D</b><p>'+msg+'</p><input id="pinI" type="password" inputmode="numeric" placeholder="PIN (número interno)"><button id="pinB">Entrar</button></div>';document.body.appendChild(o);
+    const go=()=>{const v=document.getElementById('pinI').value.trim();if(v){o.remove();res(v)}};document.getElementById('pinB').onclick=go;document.getElementById('pinI').onkeydown=e=>{if(e.key==='Enter')go()};document.getElementById('pinI').focus()});
+  let pin='';try{pin=localStorage.getItem('pin')||''}catch(e){}
+  if(!pin)pin=await ask('Entre com o mesmo PIN da app.');
+  for(;;){
+    try{const r=await (await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({acao:'obterDados',args:[pin]})})).json();
+      if(r.ok){try{localStorage.setItem('pin',pin)}catch(e){}return r.data.artigos}
+      pin=await ask(r.erro||'PIN inválido. Tente outra vez.');}
+    catch(e){pin=await ask('Sem ligação ao servidor. Verifique a internet e tente outra vez.')}
+  }
+};
+</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+
+const BAYS=['A','B','C','D','E','F'], LEVELS=['Chão','Nível 1','Nível 2','Nível 3'];
+const C_OK=0x5E9732, C_ZERO=0xC0392B, C_HI=0xF2B705, C_STEEL=0x1F4FA0, C_BEAM=0xE0701F, C_WOOD=0xB98A57;
+const items=(await window.loadData()).map(r=>({c:r.c,a:r.a,z:r.z,l:r.l||'',d:r.d,q:r.q,u:r.u,v:r.v||''}));
+const WH=['Armazém 1','Armazém 2','Armazém DIE','Parafusaria','Estaleiro'];
+const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const num=s=>parseInt((s.match(/\d+/)||[0])[0],10);
+
+// --- cena ---
+const host=document.getElementById('scene');
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+host.prepend(renderer.domElement);
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(45,1,0.1,500);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;controls.maxPolarAngle=Math.PI*0.48;
+scene.add(new THREE.HemisphereLight(0xffffff,0x667766,1.1));
+const sun=new THREE.DirectionalLight(0xffffff,1.2);sun.position.set(20,40,15);scene.add(sun);
+let world=new THREE.Group();scene.add(world);
+const pickables=[];
+
+function themeColors(){const s=getComputedStyle(document.documentElement);return{bg:s.getPropertyValue('--scene').trim(),fg:s.getPropertyValue('--fg').trim()}}
+function applyTheme(){scene.background=new THREE.Color(themeColors().bg)}
+applyTheme();matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+function label(text,size=1){
+  const cv=document.createElement('canvas'),x=cv.getContext('2d');cv.width=256;cv.height=96;
+  x.fillStyle='#39433A';x.beginPath();x.roundRect(4,4,248,88,16);x.fill();
+  x.fillStyle='#fff';x.font='600 46px Inter,Arial,sans-serif';x.textAlign='center';x.textBaseline='middle';
+  let fs=46;while(x.measureText(text).width>230&&fs>26){fs-=2;x.font='600 '+fs+'px Inter,Arial,sans-serif'}
+  let t=text;while(x.measureText(t).width>230&&t.length>3)t=t.slice(0,-2);if(t!==text)t+='…';
+  x.fillText(t,128,50);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),depthTest:false}));
+  sp.scale.set(2.4*size,0.9*size,1);sp.renderOrder=10;return sp;
+}
+const box=(w,h,d,color,opts={})=>new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness:.7,...opts}));
+
+// rack: 6 vãos (A–F) x 4 níveis (chão + 3)
+const BW=1.4,LH=1.25,RD=1.1;
+function buildRack(loc,x,z,rot,bays){
+  const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=rot;
+  const n=bays.length,W=n*BW,H=LEVELS.length*LH;
+  for(let i=0;i<=n;i++)for(const dz of[-RD/2,RD/2]){const p=box(.08,H+.2,.08,C_STEEL);p.position.set(-W/2+i*BW,(H+.2)/2,dz);g.add(p)}
+  for(let lv=1;lv<=LEVELS.length;lv++)for(const dz of[-RD/2,RD/2]){const b=box(W,.1,.08,C_BEAM);b.position.set(0,lv*LH-.05,dz);g.add(b)}
+  for(let lv=1;lv<LEVELS.length;lv++){const dk=box(W,.04,RD,C_WOOD);dk.position.set(0,lv*LH-.12,0);g.add(dk)}
+  bays.forEach((bay,i)=>{
+    const its=items.filter(t=>t.a===loc.a&&t.z===loc.z&&(bay==='*'||t.l===bay));
+    for(let lv=0;lv<LEVELS.length;lv++){
+      const m=box(BW*.82,LH*.62,RD*.8,0xffffff,{transparent:true,opacity:.92});
+      m.position.set(-W/2+i*BW+BW/2,lv*LH+LH*.32+.02,0);
+      m.userData={loc,bay,its,base:its.length?(its.some(t=>t.q>0)?C_OK:C_ZERO):null};
+      if(!its.length){m.material.color.set(0x9aa59b);m.material.opacity=.18}
+      else m.material.color.set(m.userData.base);
+      g.add(m);pickables.push(m);
+    }
+    if(bay!=='*'){const l=label(bay,.45);l.position.set(-W/2+i*BW+BW/2,.25,RD/2+.35);g.add(l)}
+  });
+  const t=label(loc.z,.8);t.position.set(0,H+.8,(loc.side||0)*RD*.9);g.add(t);
+  loc.group=g;loc.center=new THREE.Vector3(x,H/2,z);world.add(g);
+}
+function buildRings(loc,x,y,z){
+  const its=items.filter(t=>t.a===loc.a&&t.z===loc.z),base=its.some(t=>t.q>0)?C_OK:C_ZERO;
+  const g=new THREE.Group();g.position.set(x,y,z);
+  for(let i=0;i<3;i++){const c=new THREE.Mesh(new THREE.CylinderGeometry(.55,.55,1.3,20),new THREE.MeshStandardMaterial({color:base,roughness:.8,transparent:true,opacity:.92}));
+    c.position.set((i-1)*1.2,.65,0);c.userData={loc,bay:'*',its,base};g.add(c);pickables.push(c)}
+  const l=label(loc.z,.75);l.position.y=2.1;g.add(l);
+  loc.group=g;loc.center=new THREE.Vector3(x,y+.6,z);world.add(g);
+}
+function buildBlock(loc,x,z,w=2.2,d=2.2){
+  const its=items.filter(t=>t.a===loc.a&&t.z===loc.z);
+  const g=new THREE.Group();g.position.set(x,0,z);
+  const pal=box(w,.15,d,0x8B6B43);pal.position.y=.075;g.add(pal);
+  const h=.5+Math.min(its.length,20)*.06;
+  const m=box(w*.9,h,d*.9,its.some(t=>t.q>0)?C_OK:C_ZERO,{transparent:true,opacity:.92});
+  m.position.y=.15+h/2;m.userData={loc,bay:'*',its,base:its.some(t=>t.q>0)?C_OK:C_ZERO};g.add(m);pickables.push(m);
+  const l=label(loc.z,.75);l.position.y=.15+h+.6;g.add(l);
+  loc.group=g;loc.center=new THREE.Vector3(x,.5,z);world.add(g);
+}
+
+// --- layout por armazém (esquema de ensaio) ---
+let locs=[],current=null;
+function clear(){world.traverse(o=>{o.geometry?.dispose?.();if(o.material){o.material.map?.dispose?.();o.material.dispose?.()}});scene.remove(world);world=new THREE.Group();scene.add(world);pickables.length=0;locs=[]}
+function floor(w,d){const f=new THREE.Mesh(new THREE.PlaneGeometry(w,d),new THREE.MeshStandardMaterial({color:0xB9C0B5,roughness:1}));f.rotation.x=-Math.PI/2;world.add(f);
+  const grid=new THREE.GridHelper(Math.max(w,d),Math.round(Math.max(w,d)/2),0x8f998d,0xa7b0a5);grid.position.y=.01;world.add(grid)}
+function zonesOf(a){return [...new Set(items.filter(t=>t.a===a).map(t=>t.z))].sort((p,q)=>num(p)-num(q)||p.localeCompare(q,'pt'))}
+
+function show(a){
+  clear();current=a;
+  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.a===a));
+  if(a==='Armazém 1'){
+    const racks=Array.from({length:20},(_,i)=>'Rack '+(i+1));
+    const W=6*BW;floor(5*(W+1.2)+6,4*(RD+3.2)+8);
+    racks.forEach((z,i)=>{
+      const row=Math.floor(i/5),col=i%5;
+      const used=new Set(items.filter(t=>t.a===a&&t.z===z).map(t=>t.l));
+      const bays=(used.size===1&&used.has(''))?['*']:BAYS;
+      const x=(col-2)*(W+1.2), zz=[-5.4,-4.2,4.2,5.4][row];
+      const loc={a,z,side:row%2?1:-1};locs.push(loc);buildRack(loc,x,zz,0,bays);
+    });
+    roof(5*(W+1.2)+6,4*(RD+3.2)+8);
+    // zona de paletes no chão (como na foto, à entrada)
+    for(let i=0;i<6;i++){const p=box(1.2,.15,1,0x8B6B43);p.position.set(-20+i*2.2,.075,13);world.add(p);const c=box(1,.6+((i*37)%5)*.15,.9,0xC9A97A);c.position.set(-20+i*2.2,.15+c.geometry.parameters.height/2,13);world.add(c)}
+    setCam(0,30,40);
+  }else if(a==='Armazém 2'){
+    floor(40,20);
+    // Rack exterior: fila comprida encostada à parede (como na foto), chão + 3 níveis
+    const loc={a,z:'Rack exterior'};locs.push(loc);buildRack(loc,-4,-7.6,0,Array(10).fill('*'));
+    // Paletes 1–16 no chão
+    const pals=zonesOf(a).filter(z=>z.startsWith('Palete'));
+    pals.forEach((z,i)=>{const l={a,z};locs.push(l);buildBlock(l,-14+(i%8)*2.9,(Math.floor(i/8))*3.2+1.2)});
+    // zona de oficina / máquinas ao fundo
+    for(let i=0;i<4;i++){const mq=box(1.6,1.1,1.2,0x7d8a80);mq.position.set(15,.55,-4+i*2.6);world.add(mq)}
+    const ol=label('Oficina',.8);ol.position.set(15,2.2,0);world.add(ol);
+    // cobertura plana com asnas
+    for(let i=0;i<=8;i++){const tr=new THREE.Mesh(new THREE.BoxGeometry(.12,.12,20),new THREE.MeshBasicMaterial({color:0x39433A,transparent:true,opacity:.3}));tr.position.set(-20+i*5,7.5,0);world.add(tr)}
+    setCam(-2,20,26);
+  }else if(a==='Estaleiro'){
+    // estaleiro ao ar livre em socalcos: patamar 1 (mais alto, ao fundo), 2 e 3 (à frente)
+    const PH=[2.4,1.2,0],PZ=[-8,-1,6],L=30,D=7;
+    PH.forEach((h,i)=>{
+      const top=box(L,.2,D,0xE6E0D2);top.position.set(0,h-.1,PZ[i]);world.add(top);
+      if(h>0){const talude=box(L,h,1,0xB4643A);talude.position.set(0,h/2-.1,PZ[i]+D/2+.5);world.add(talude)}
+      const pl=label('Patamar '+(i+1),.9);pl.position.set(-L/2+3.5,h+1.2,PZ[i]+D/2-.8);world.add(pl);
+    });
+    const ground=box(L+6,.1,30,0xC9C2B0);ground.position.set(0,-.25,-1);world.add(ground);
+    const zs=zonesOf(a),per=Math.ceil(zs.length/3);
+    zs.forEach((z,i)=>{const pi=Math.min(2,Math.floor(i/per)),k=i-pi*per;const loc={a,z};locs.push(loc);
+      buildRings(loc,-L/2+4+k*(L-6)/Math.max(per-1,1),PH[pi],PZ[pi]-1.2)});
+    // máquina (como na foto)
+    const mq=box(2,1.6,1.4,0xE0A800);mq.position.set(L/2-1.5,PH[2]+.8,PZ[2]+1.8);world.add(mq);
+    setCam(0,24,32);
+  }else if(a==='Armazém DIE'){
+    floor(14,26);
+    // estantes metálicas leves (6 prateleiras): fila comprida à esquerda, fundo e direita; armários à direita
+    const shelf=(x,z,len,rot,col)=>{const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=rot;const D=.7,H=2.6,n=Math.round(len/1.2);
+      for(let i=0;i<=n;i++)for(const dz of[-D/2,D/2]){const u=box(.05,H,.05,col);u.position.set(-len/2+i*len/n,H/2,dz);g.add(u)}
+      for(let s=0;s<6;s++){const sh=box(len,.03,D,0xB98A57);sh.position.set(0,.15+s*.48,0);g.add(sh)}
+      world.add(g)};
+    shelf(-5.6,0,20,Math.PI/2,0x7A4A3A);
+    shelf(0,-11.8,8,0,0x2B2F33);
+    shelf(4.6,-6,8,Math.PI/2,0x2B2F33);
+    for(let i=0;i<4;i++){const ar=box(.8,2.4,1.4,0xA9B3A4);ar.position.set(5.6,1.2,2+i*1.5);world.add(ar)}
+    const la=label('Armários',.7);la.position.set(5.6,3,4.2);world.add(la);
+    const ls=label('Cabos / elétrico',.8);ls.position.set(-5.6,3.3,0);world.add(ls);
+    for(let i=0;i<=6;i++){const tr=new THREE.Mesh(new THREE.BoxGeometry(14,.1,.1),new THREE.MeshBasicMaterial({color:0x39433A,transparent:true,opacity:.3}));tr.position.set(0,6,-12+i*4);world.add(tr)}
+    setCam(0,14,20);
+  }else{
+    const zs=zonesOf(a),cols=Math.ceil(Math.sqrt(zs.length));
+    floor(cols*3.4+4,Math.ceil(zs.length/cols)*3.6+4);
+    zs.forEach((z,i)=>{const loc={a,z};locs.push(loc);buildBlock(loc,(i%cols-(cols-1)/2)*3.4,(Math.floor(i/cols)-(Math.ceil(zs.length/cols)-1)/2)*3.6)});
+    setCam(0,16,18);
+  }
+  applySearch();
+  const its=items.filter(t=>t.a===a);
+  if(!its.length){panel('Armazém',a,'Ainda sem artigos na lista',[]);res.innerHTML='<div class="empty">Este armazém ainda não está na lista de stock. Por agora é só a disposição, para ensaio.</div>';return}
+  panel('Armazém',a,`${its.length} artigos · ${its.filter(t=>t.q===0).length} sem stock`,its.slice().sort((p,q)=>p.z.localeCompare(q.z,'pt',{numeric:true})||p.l.localeCompare(q.l)));
+}
+function roof(w,d){const r=d/2+1;
+  for(let i=0;i<=8;i++){const a=new THREE.Mesh(new THREE.TorusGeometry(r,.03,4,48,Math.PI),new THREE.MeshBasicMaterial({color:0x39433A,transparent:true,opacity:.35}));a.position.set(-w/2+i*w/8,3.5,0);a.rotation.y=Math.PI/2;world.add(a)}}
+function setCam(x,y,z){camera.position.set(x,y,z);controls.target.set(0,1,0);controls.update()}
+
+// --- painel ---
+const res=document.getElementById('res');
+function panel(k,h,p,list){
+  document.getElementById('pk').textContent=k;document.getElementById('ph').textContent=h;document.getElementById('pp').textContent=p;
+  res.innerHTML='';
+  if(!list.length){res.innerHTML='<div class="empty">Sem artigos aqui.</div>';return}
+  const frag=document.createDocumentFragment();
+  list.slice(0,300).forEach(t=>{
+    const b=document.createElement('button');
+    b.innerHTML=`<span class="d"></span><span class="q${t.q===0?' zero':''}">${t.q} ${t.u}</span><span class="m">${t.c} · ${t.a} · ${t.z}${t.l?' · '+t.l:''}</span>`;
+    b.querySelector('.d').textContent=t.d;
+    b.onclick=()=>goTo(t);frag.appendChild(b);
+  });
+  if(list.length>300){const e=document.createElement('div');e.className='empty';e.textContent=`Mais ${list.length-300} artigos. Afine a pesquisa.`;frag.appendChild(e)}
+  res.appendChild(frag);
+}
+function goTo(t){
+  if(t.a!==current)show(t.a);
+  const loc=locs.find(l=>l.z===t.z);if(!loc)return;
+  highlight(m=>m.userData.loc===loc&&(m.userData.bay==='*'||m.userData.bay===t.l));
+  const c=loc.center;controls.target.copy(c);camera.position.set(c.x+4,c.y+6,c.z+(c.z<0?-9:9));controls.update();
+}
+function highlight(fn){pickables.forEach(m=>{const on=fn(m),d=m.userData;
+  if(!d.its.length)return;m.material.color.set(on?C_HI:d.base);m.material.opacity=on||!anyHi?.92:.25;m.material.emissive?.set(on?0x5a4300:0x000000)})}
+let anyHi=false;
+
+// --- pesquisa ---
+const q=document.getElementById('q');
+function applySearch(){
+  const s=norm(q.value.trim());
+  if(!s){anyHi=false;highlight(()=>false);return null}
+  const words=s.split(/\s+/);
+  const hits=items.filter(t=>{const h=norm(t.c+' '+t.d);return words.every(w=>h.includes(w))});
+  anyHi=true;
+  highlight(m=>m.userData.its.some(t=>hits.includes(t)&&(m.userData.bay==='*'||t.l===m.userData.bay)));
+  return hits;
+}
+q.addEventListener('input',()=>{
+  const hits=applySearch();
+  if(!hits){show(current);return}
+  const here=hits.filter(t=>t.a===current).length;
+  panel('Pesquisa',`${hits.length} resultado${hits.length===1?'':'s'}`,here<hits.length?`${here} neste armazém · toque num resultado para ir até ele`:'Toque num resultado para ir até ele',hits);
+});
+
+// --- clique na cena ---
+const ray=new THREE.Raycaster(),ptr=new THREE.Vector2();let down=null;
+renderer.domElement.addEventListener('pointerdown',e=>down=[e.clientX,e.clientY]);
+renderer.domElement.addEventListener('pointerup',e=>{
+  if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>6)return;
+  const r=renderer.domElement.getBoundingClientRect();ptr.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);
+  ray.setFromCamera(ptr,camera);const hit=ray.intersectObjects(pickables.filter(m=>m.userData.its.length))[0];if(!hit)return;
+  const d=hit.object.userData;
+  const its=d.bay==='*'?items.filter(t=>t.a===d.loc.a&&t.z===d.loc.z):d.its;
+  highlight(m=>m.userData.loc===d.loc&&m.userData.bay===d.bay);
+  panel(d.loc.a,d.loc.z+(d.bay!=='*'?' · vão '+d.bay:''),`${its.length} artigos · ${its.filter(t=>t.q===0).length} sem stock`,its);
+});
+
+// --- arranque ---
+const tabs=document.getElementById('tabs');
+WH.forEach(a=>{const b=document.createElement('button');b.textContent=a;b.dataset.a=a;b.onclick=()=>{q.value='';show(a)};tabs.appendChild(b)});
+function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(host);resize();
+show('Armazém 1');
+renderer.setAnimationLoop(()=>{controls.update();renderer.render(scene,camera)});
+</script>
+
+</body></html>
