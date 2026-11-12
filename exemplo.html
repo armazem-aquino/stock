@@ -260,10 +260,11 @@ function show(a){
   applySearch();
   const its=items.filter(t=>t.a===a);
   if(!its.length){panel('Armazém',a,'Ainda sem artigos na lista',[]);res.innerHTML='<div class="empty">Este armazém ainda não está na lista de stock. Por agora é só a disposição, para ensaio.</div>';return}
-  panel('Armazém',a,`${its.length} artigos · ${its.filter(t=>t.q===0).length} sem stock`,its.slice().sort((p,q)=>p.z.localeCompare(q.z,'pt',{numeric:true})||p.l.localeCompare(q.l)));
+  panel('Armazém',a,resumo(its),its.slice().sort((p,q)=>p.z.localeCompare(q.z,'pt',{numeric:true})||p.l.localeCompare(q.l)));
 }
 function roof(w,d){const r=d/2+1;
   for(let i=0;i<=8;i++){const a=new THREE.Mesh(new THREE.TorusGeometry(r,.03,4,48,Math.PI),new THREE.MeshBasicMaterial({color:0x39433A,transparent:true,opacity:.35}));a.position.set(-w/2+i*w/8,3.5,0);a.rotation.y=Math.PI/2;world.add(a)}}
+function resumo(its){const z=its.filter(t=>t.q===0).length,n=its.length;return n+(n===1?' artigo':' artigos')+' · '+(z===0?'todos com stock':z===n?'todos a zero':z+' a zero')}
 function setCam(x,y,z){camera.position.set(x,y,z);controls.target.set(0,1,0);controls.update()}
 
 // --- painel ---
@@ -320,7 +321,7 @@ renderer.domElement.addEventListener('pointerup',e=>{
   const d=hit.object.userData;
   const its=d.bay==='*'?items.filter(t=>t.a===d.loc.a&&t.z===d.loc.z):d.its;
   highlight(m=>m.userData.loc===d.loc&&m.userData.bay===d.bay);
-  panel(d.loc.a,d.loc.z+(d.bay!=='*'?' · vão '+d.bay:''),`${its.length} artigos · ${its.filter(t=>t.q===0).length} sem stock`,its);
+  panel(d.loc.a,d.loc.z+(d.bay!=='*'?' · vão '+d.bay:''),resumo(its),its);
 });
 
 // --- arranque ---
