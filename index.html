@@ -141,7 +141,7 @@ async function entrar(pin){
 async function carregar(){
   try {
     const d = await run('obterDados', S.pin);
-    S.art = d.artigos; S.movs = d.movs;
+    S.art = d.artigos; S.movs = d.movs; S.ro = d.perfil === 'Consulta'; $('quem').textContent = S.nome + (S.ro ? ' · consulta' : '');
     const ob = new Set(S.movs.map(m => m.o).filter(Boolean));
     $('obras').innerHTML = [...ob].sort().map(o => '<option value="'+esc(o)+'">').join('');
     render();
@@ -150,7 +150,7 @@ async function carregar(){
 
 function render(){
   $('tStock').className = S.tab==='stock' ? 'on' : ''; $('tMov').className = S.tab==='mov' ? 'on' : ''; $('tInv').className = S.tab==='inv' ? 'on' : '';
-  $('btnNovo').hidden = S.tab !== 'stock';
+  $('btnNovo').hidden = S.tab !== 'stock' || !!S.ro; $('tInv').hidden = !!S.ro; if (S.ro && S.tab === 'inv') S.tab = 'stock';
   $('q').hidden = S.tab === 'inv';
   if (S.tab === 'inv') { $('main').innerHTML = vInv(); ligaInv(); return; }
   $('main').innerHTML = S.tab === 'stock' ? vStock() : vMov();
@@ -206,9 +206,10 @@ function painel(){
     + '<button class="go '+S.tipo+'" id="fg"'+(S.busy?' disabled':'')+'>'+(S.busy?'A gravar…':'Gravar '+S.tipo.toLowerCase())+'</button>'
     + (hist.length ? '<div><label>Últimos movimentos</label>'+hist.map(m => '<div class="loc">'+new Date(m.t).toLocaleDateString('pt-PT')+' · '+esc(m.tp)+' '+fmt(m.q)+(m.o?' · '+esc(m.o):'')+' · '+esc(m.u)+'</div>').join('')+'</div>' : '')
     + '</div>';
+  if (S.ro) { ['fq','fo','fn'].forEach(id => { const e = $(id); if (e) e.parentNode.remove(); }); const sg = document.querySelector('#ov .seg'); if (sg) sg.remove(); const g = $('fg'); if (g) g.outerHTML = '<div class="loc">Acesso só de consulta: não pode registar movimentos.</div>'; }
   $('scrim').onclick = fechar; $('fx').onclick = fechar;
   document.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { S.tipo = b.dataset.t; S.msg = null; painel(); $('fq').focus(); });
-  $('fg').onclick = gravar;
+  if ($('fg')) $('fg').onclick = gravar;
 }
 async function gravar(){
   const a = S.art.find(x => x.c === S.sel);
