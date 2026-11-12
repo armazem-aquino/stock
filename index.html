@@ -94,7 +94,7 @@ label{font-size:13px;font-weight:600;color:var(--muted);display:block;margin-bot
   <header>
     <div class="top"><img src="logo-branco.png" alt="Aquino" style="height:20px"><h1>Stock</h1><small id="quem"></small><button class="hb" id="btnAtualizar">↻</button><button class="hb" id="btnSair">Sair</button></div>
     <input id="q" type="search" placeholder="Procurar artigo, DN, rack…" autocomplete="off">
-    <div class="tabs"><button id="tStock" class="on">Stock</button><button id="tInv">Inventário</button><button id="tMov">Movimentos</button></div>
+    <div class="tabs"><button id="tStock" class="on">Stock</button><button id="tInv">Inventário</button><button id="tMov">Movimentos</button><button id="t3d">3D</button></div>
   </header>
   <main id="main"><div class="empty">A carregar artigos…</div></main>
   <button class="fab" id="btnNovo">+ Artigo</button>
@@ -308,6 +308,7 @@ $('btnNovo').onclick = novo;
 $('tStock').onclick = () => { S.tab = 'stock'; render(); };
 $('tMov').onclick = () => { S.tab = 'mov'; render(); };
 $('tInv').onclick = () => { S.tab = 'inv'; render(); };
+$('t3d').onclick = () => { location.href = '3d.html'; };
 let qT; $('q').oninput = e => { clearTimeout(qT); qT = setTimeout(() => { S.q = e.target.value; S.lim = 150; render(); }, 150); };
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
