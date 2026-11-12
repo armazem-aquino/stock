@@ -198,7 +198,8 @@ function show(a){
     const MAP={6:[9,10,5,6],5:[11,12,5,6],4:[13,14,5,6],3:[15,15,7,9],18:[4,5,9,10],15:[6,7,9,10],11:[9,10,9,10],7:[12,13,9,10],12:[9,10,11,12],8:[12,13,11,12],19:[4,5,13,14],16:[6,7,13,14],2:[15,15,14,16],1:[17,17,14,16],13:[9,10,15,16],9:[12,13,15,16],20:[4,5,17,18],17:[6,7,17,18],14:[9,10,17,18],10:[12,13,17,18]};
     // disposição real (folha ESQUEMA ARMAZÉM do Excel): coluna -> x, linha -> z
     const CX=2.0,RZ=4.4;floor(38,66);
-    Object.entries(MAP).forEach(([n,[c1,c2,r1,r2]])=>{const z='Rack '+n;
+    const ZA=[...new Set(items.filter(t=>t.a===a).map(t=>t.z))];
+    Object.entries(MAP).forEach(([n,[c1,c2,r1,r2]])=>{const z=ZA.find(x=>x==='Rack '+n||x.indexOf('Rack '+n+' ')===0)||'Rack '+n;
       const used=new Set(items.filter(t=>t.a===a&&t.z===z).map(t=>t.l));
       const bays=(used.size===0||(used.size===1&&used.has('')))?['*']:BAYS;
       const len=(r2-r1+1)*RZ*.95;
@@ -248,6 +249,9 @@ function show(a){
     for(let i=0;i<4;i++){const ar=box(.8,2.4,1.4,0xA9B3A4);ar.position.set(5.6,1.2,2+i*1.5);world.add(ar)}
     const la=label('Armários',.7);la.position.set(5.6,3,4.2);world.add(la);
     const ls=label('Cabos / elétrico',.8);ls.position.set(-5.6,3.3,0);world.add(ls);
+    // zonas do DIE com artigos (clicáveis)
+    const PD={'Cabos pequenos 1':[-3.6,4],'Cabos pequenos 2':[-3.6,-4],'Bobines':[0.6,4.5],'Fusíveis':[3.2,-1.5]};let k=0;
+    zonesOf(a).forEach(z=>{const p=PD[z]||[0.6,-6+(k++)*2.6];const loc={a,z};locs.push(loc);if(z==='Bobines')buildRings(loc,p[0],0,p[1]);else buildBlock(loc,p[0],p[1],1.8,1.8)});
     for(let i=0;i<=6;i++){const tr=new THREE.Mesh(new THREE.BoxGeometry(14,.1,.1),new THREE.MeshBasicMaterial({color:0x39433A,transparent:true,opacity:.3}));tr.position.set(0,6,-12+i*4);world.add(tr)}
     setCam(0,14,20);
   }else{
