@@ -31,7 +31,8 @@ header{position:sticky;top:0;z-index:5;background:var(--brand);color:#fff;paddin
 .top small{opacity:.8;font-size:12px}
 .hb{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;padding:6px 10px;font-size:13px}
 #q{width:100%;border:0;border-radius:10px;padding:11px 12px;font-size:16px}
-.tabs{display:flex;gap:16px}
+.tabs{display:flex;gap:16px;overflow-x:auto}.tabs button{white-space:nowrap}
+.rw{overflow:auto;max-height:60vh;border:1px solid var(--line);border-radius:10px;background:var(--card)}.rt{width:100%;border-collapse:collapse;font-size:12.5px}.rt th,.rt td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.rt th{background:var(--sunk);position:sticky;top:0}
 .tabs button{background:none;border:0;color:rgba(255,255,255,.7);padding:4px 0;font-weight:600;border-bottom:3px solid transparent}
 .tabs button.on{color:#fff;border-bottom-color:var(--accent)}
 main{padding:12px 14px 80px;display:flex;flex-direction:column;gap:10px;max-width:900px;margin:0 auto}
@@ -94,7 +95,7 @@ label{font-size:13px;font-weight:600;color:var(--muted);display:block;margin-bot
   <header>
     <div class="top"><img src="logo-branco.png" alt="Aquino" style="height:20px"><h1>Stock</h1><small id="quem"></small><button class="hb" id="btnAtualizar">↻</button><button class="hb" id="btnSair">Sair</button></div>
     <input id="q" type="search" placeholder="Procurar artigo, DN, rack…" autocomplete="off">
-    <div class="tabs"><button id="tStock" class="on">Stock</button><button id="tInv">Inventário</button><button id="tMov">Movimentos</button><button id="t3d">3D</button></div>
+    <div class="tabs"><button id="tStock" class="on">Stock</button><button id="tInv">Inventário</button><button id="tMov">Movimentos</button><button id="tRel">Relatórios</button><button id="t3d">3D</button></div>
   </header>
   <main id="main"><div class="empty">A carregar artigos…</div></main>
   <button class="fab" id="btnNovo">+ Artigo</button>
@@ -149,9 +150,10 @@ async function carregar(){
 }
 
 function render(){
-  $('tStock').className = S.tab==='stock' ? 'on' : ''; $('tMov').className = S.tab==='mov' ? 'on' : ''; $('tInv').className = S.tab==='inv' ? 'on' : '';
+  $('tStock').className = S.tab==='stock' ? 'on' : ''; $('tMov').className = S.tab==='mov' ? 'on' : ''; $('tInv').className = S.tab==='inv' ? 'on' : ''; $('tRel').className = S.tab==='rel' ? 'on' : ''; $('tRel').hidden = !!S.ro; if (S.ro && S.tab === 'rel') S.tab = 'stock';
   $('btnNovo').hidden = S.tab !== 'stock' || !!S.ro; $('tInv').hidden = !!S.ro; if (S.ro && S.tab === 'inv') S.tab = 'stock';
-  $('q').hidden = S.tab === 'inv';
+  $('q').hidden = S.tab === 'inv' || S.tab === 'rel';
+  if (S.tab === 'rel') { $('main').innerHTML = vRel(); ligaRel(); return; }
   if (S.tab === 'inv') { $('main').innerHTML = vInv(); ligaInv(); return; }
   $('main').innerHTML = S.tab === 'stock' ? vStock() : vMov();
   document.querySelectorAll('[data-arm]').forEach(b => b.onclick = () => { S.arm = b.dataset.arm; S.lim = 150; render(); });
@@ -244,6 +246,90 @@ function novo(){
 }
 
 
+/* ---------- Relatórios ---------- */
+const REL = {saidas:'Saídas por obra', inv:'Inventário (contagens)', entradas:'Entradas', zero:'Artigos a zero ou parados'};
+function relPeriodo(){
+  const R = S.rel, h = new Date(), iso = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  if (R.per === 'mes') return [iso(new Date(h.getFullYear(), h.getMonth(), 1)), iso(h)];
+  if (R.per === 'ant') return [iso(new Date(h.getFullYear(), h.getMonth()-1, 1)), iso(new Date(h.getFullYear(), h.getMonth(), 0))];
+  return [R.de || iso(h), R.ate || iso(h)];
+}
+function relDados(){
+  const R = S.rel, A = {}, mv = R.movs || [], dt = t => new Date(t).toLocaleDateString('pt-PT'), pt = s => s.split('-').reverse().join('/');
+  S.art.forEach(a => A[a.c] = a);
+  const un = c => (A[c] || {}).u || '', onde = c => A[c] ? A[c].a + ' · ' + loc(A[c]) : '';
+  const D = {titulo: 'Stock Armazém Aquino · ' + REL[R.tipo], sub: R.tipo === 'zero' ? 'Situação em ' + dt(new Date()) : 'Período: ' + pt(R.de2) + ' a ' + pt(R.ate2)};
+  if (R.tipo === 'saidas') {
+    D.cols = ['Obra','Data','Código','Artigo','Qtd','Un','Quem','Nota'];
+    D.rows = mv.filter(m => m.tp === 'Saída').sort((x,y) => String(x.o).localeCompare(String(y.o),'pt',{numeric:true}) || x.t.localeCompare(y.t)).map(m => [m.o || '(sem obra)', dt(m.t), m.c, m.d, m.q, un(m.c), m.u, m.nt]);
+    D.resumo = D.rows.length + (D.rows.length === 1 ? ' saída' : ' saídas') + ' · ' + new Set(D.rows.map(r => r[0])).size + ' obra(s)';
+  } else if (R.tipo === 'entradas') {
+    D.cols = ['Data','Origem','Código','Artigo','Qtd','Un','Quem','Nota'];
+    D.rows = mv.filter(m => m.tp === 'Entrada').sort((x,y) => x.t.localeCompare(y.t)).map(m => [dt(m.t), m.o, m.c, m.d, m.q, un(m.c), m.u, m.nt]);
+    D.resumo = D.rows.length + (D.rows.length === 1 ? ' entrada' : ' entradas');
+  } else if (R.tipo === 'inv') {
+    D.cols = ['Data','Localização','Código','Artigo','Antes','Contado','Diferença','Quem'];
+    D.rows = mv.filter(m => m.tp === 'Contagem').sort((x,y) => onde(x.c).localeCompare(onde(y.c),'pt',{numeric:true}) || x.t.localeCompare(y.t)).map(m => [dt(m.t), onde(m.c), m.c, m.d, m.an, m.dp, m.dp - m.an, m.u]);
+    D.resumo = D.rows.length + (D.rows.length === 1 ? ' contagem' : ' contagens') + ' · ' + D.rows.filter(r => r[6] !== 0).length + ' com diferença';
+  } else {
+    const ult = R.ult || {}, lim = Date.now() - 183*864e5;
+    D.cols = ['Estado','Código','Artigo','Localização','Qtd','Un','Último movimento'];
+    D.rows = S.art.filter(a => a.q === 0 || !ult[a.c] || new Date(ult[a.c]).getTime() < lim).map(a => [a.q === 0 ? 'A zero' : 'Parado', a.c, a.d, a.a + ' · ' + loc(a), a.q, a.u, ult[a.c] ? dt(ult[a.c]) : 'sem registo']).sort((x,y) => x[0].localeCompare(y[0]));
+    D.resumo = D.rows.filter(r => r[0] === 'A zero').length + ' a zero · ' + D.rows.filter(r => r[0] === 'Parado').length + ' parados (sem movimentos há 6 meses)';
+  }
+  return D;
+}
+function vRel(){
+  const R = S.rel = S.rel || {tipo:'saidas', per:'mes', de:'', ate:'', movs:null, ult:null, busy:false, msg:null};
+  let h = '<div class="grp" style="padding:12px;display:flex;flex-direction:column;gap:10px">'
+    + '<div><label>Relatório</label><select class="inp" id="rTipo">' + Object.keys(REL).map(k => '<option value="'+k+'"'+(k===R.tipo?' selected':'')+'>'+REL[k]+'</option>').join('') + '</select></div>'
+    + (R.tipo === 'zero' ? '' : '<div><label>Período</label><select class="inp" id="rPer"><option value="mes"'+(R.per==='mes'?' selected':'')+'>Este mês</option><option value="ant"'+(R.per==='ant'?' selected':'')+'>Mês passado</option><option value="datas"'+(R.per==='datas'?' selected':'')+'>Entre datas</option></select></div>')
+    + (R.tipo !== 'zero' && R.per === 'datas' ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>De</label><input class="inp" id="rDe" type="date" value="'+esc(R.de)+'"></div><div><label>Até</label><input class="inp" id="rAte" type="date" value="'+esc(R.ate)+'"></div></div>' : '')
+    + (R.msg ? '<div class="msg err">'+esc(R.msg)+'</div>' : '')
+    + '<button class="go" id="rVer"'+(R.busy?' disabled':'')+'>'+(R.busy?'A carregar…':'Ver relatório')+'</button></div>';
+  if (!R.movs) return h + '<div class="empty">Escolha o relatório e o período e carregue em «Ver relatório».</div>';
+  const D = relDados(), max = 300;
+  h += '<div class="loc" style="text-align:center">' + esc(D.sub) + ' · <b>' + esc(D.resumo) + '</b></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn2" id="rXls"'+(D.rows.length?'':' disabled')+'>Descarregar Excel</button><button class="btn2" id="rPdf"'+(D.rows.length?'':' disabled')+'>Descarregar PDF</button></div>';
+  if (!D.rows.length) return h + '<div class="empty">Sem registos neste período.</div>';
+  h += '<div class="rw"><table class="rt"><thead><tr>' + D.cols.map(c => '<th>'+esc(c)+'</th>').join('') + '</tr></thead><tbody>'
+    + D.rows.slice(0, max).map(r => '<tr>' + r.map(v => '<td>'+esc(typeof v === 'number' ? fmt(v) : v)+'</td>').join('') + '</tr>').join('') + '</tbody></table></div>';
+  if (D.rows.length > max) h += '<div class="loc" style="text-align:center">A mostrar ' + max + ' de ' + D.rows.length + ' linhas. O Excel e o PDF levam todas.</div>';
+  return h;
+}
+function carregaLib(src){ return new Promise((ok, er) => { if (document.querySelector('script[src="'+src+'"]')) return ok(); const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => { s.remove(); er(new Error('Sem internet para preparar o ficheiro.')); }; document.head.appendChild(s); }); }
+function ligaRel(){
+  const R = S.rel;
+  $('rTipo').onchange = e => { R.tipo = e.target.value; R.movs = null; R.msg = null; render(); };
+  if ($('rPer')) $('rPer').onchange = e => { R.per = e.target.value; R.movs = null; R.msg = null; render(); };
+  if ($('rDe')) { $('rDe').onchange = e => R.de = e.target.value; $('rAte').onchange = e => R.ate = e.target.value; }
+  $('rVer').onclick = async () => {
+    const [de, ate] = relPeriodo();
+    if (R.tipo !== 'zero' && R.per === 'datas' && (!R.de || !R.ate || R.de > R.ate)) { R.msg = 'Indique as duas datas (a primeira antes da segunda).'; render(); return; }
+    R.busy = true; R.msg = null; render();
+    try { const d = await run('relatorio', S.pin, de, ate); R.movs = d.movs; R.ult = d.ultimo; R.de2 = de; R.ate2 = ate; }
+    catch(e) { R.msg = e.message || 'Erro ao carregar'; R.movs = null; }
+    R.busy = false; render();
+  };
+  const nome = () => 'Stock_' + ({saidas:'Saidas_por_obra', inv:'Inventario', entradas:'Entradas', zero:'Zero_e_parados'})[R.tipo] + '_' + (R.tipo === 'zero' ? new Date().toISOString().slice(0,10) : R.de2 + '_a_' + R.ate2);
+  if ($('rXls')) $('rXls').onclick = async () => {
+    try { await carregaLib('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+      const D = relDados(), ws = XLSX.utils.aoa_to_sheet([[D.titulo], [D.sub + ' · ' + D.resumo], [], D.cols].concat(D.rows));
+      ws['!cols'] = D.cols.map((c, i) => ({wch: Math.min(60, Math.max(c.length, ...D.rows.slice(0, 500).map(r => String(r[i] == null ? '' : r[i]).length)) + 2)}));
+      const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Relatório'); XLSX.writeFile(wb, nome() + '.xlsx'); toast('Excel descarregado');
+    } catch(e) { toast(e.message || 'Não foi possível criar o Excel'); }
+  };
+  if ($('rPdf')) $('rPdf').onclick = async () => {
+    try { await carregaLib('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js'); await carregaLib('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js');
+      const D = relDados(), doc = new jspdf.jsPDF({orientation: 'landscape'});
+      doc.setFontSize(14); doc.setTextColor(57, 67, 58); doc.text(D.titulo, 14, 15);
+      doc.setFontSize(10); doc.setTextColor(90); doc.text(D.sub + ' · ' + D.resumo, 14, 22);
+      doc.autoTable({head: [D.cols], body: D.rows.map(r => r.map(v => typeof v === 'number' ? fmt(v) : String(v == null ? '' : v))), startY: 27, styles: {fontSize: 8, cellPadding: 1.5}, headStyles: {fillColor: [57, 67, 58]}, alternateRowStyles: {fillColor: [243, 245, 241]}, margin: {left: 14, right: 14}});
+      doc.save(nome() + '.pdf'); toast('PDF descarregado');
+    } catch(e) { toast(e.message || 'Não foi possível criar o PDF'); }
+  };
+}
+
 /* ---------- Modo inventário ---------- */
 function zonasDe(arm){ return [...new Set(S.art.filter(a => a.a === arm).map(a => a.z + (a.l ? '|' + a.l : '')))].sort((x,y) => x.localeCompare(y,'pt',{numeric:true})); }
 function listaInv(){ const I = S.inv; if (!I.zona) return []; const [z,l] = I.zona.split('|'); return S.art.filter(a => a.a === I.arm && a.z === z && (a.l||'') === (l||'')); }
@@ -310,6 +396,7 @@ $('tStock').onclick = () => { S.tab = 'stock'; render(); };
 $('tMov').onclick = () => { S.tab = 'mov'; render(); };
 $('tInv').onclick = () => { S.tab = 'inv'; render(); };
 $('t3d').onclick = () => { location.href = '3d.html'; };
+$('tRel').onclick = () => { S.tab = 'rel'; render(); };
 let qT; $('q').oninput = e => { clearTimeout(qT); qT = setTimeout(() => { S.q = e.target.value; S.lim = 150; render(); }, 150); };
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
