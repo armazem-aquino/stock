@@ -145,23 +145,23 @@ const box=(w,h,d,color,opts={})=>new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new
 
 // rack: 6 vãos (A–F) x 4 níveis (chão + 3)
 const BW=1.4,LH=1.25,RD=1.1;
-function buildRack(loc,x,z,rot,bays){
+function buildRack(loc,x,z,rot,bays,bw=BW){
   const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=rot;
-  const n=bays.length,W=n*BW,H=LEVELS.length*LH;
-  for(let i=0;i<=n;i++)for(const dz of[-RD/2,RD/2]){const p=box(.08,H+.2,.08,C_STEEL);p.position.set(-W/2+i*BW,(H+.2)/2,dz);g.add(p)}
+  const n=bays.length,W=n*bw,H=LEVELS.length*LH;
+  for(let i=0;i<=n;i++)for(const dz of[-RD/2,RD/2]){const p=box(.08,H+.2,.08,C_STEEL);p.position.set(-W/2+i*bw,(H+.2)/2,dz);g.add(p)}
   for(let lv=1;lv<=LEVELS.length;lv++)for(const dz of[-RD/2,RD/2]){const b=box(W,.1,.08,C_BEAM);b.position.set(0,lv*LH-.05,dz);g.add(b)}
   for(let lv=1;lv<LEVELS.length;lv++){const dk=box(W,.04,RD,C_WOOD);dk.position.set(0,lv*LH-.12,0);g.add(dk)}
   bays.forEach((bay,i)=>{
     const its=items.filter(t=>t.a===loc.a&&t.z===loc.z&&(bay==='*'||t.l===bay));
     for(let lv=0;lv<LEVELS.length;lv++){
-      const m=box(BW*.82,LH*.62,RD*.8,0xffffff,{transparent:true,opacity:.92});
-      m.position.set(-W/2+i*BW+BW/2,lv*LH+LH*.32+.02,0);
+      const m=box(bw*.82,LH*.62,RD*.8,0xffffff,{transparent:true,opacity:.92});
+      m.position.set(-W/2+i*bw+bw/2,lv*LH+LH*.32+.02,0);
       m.userData={loc,bay,its,base:its.length?(its.some(t=>t.q>0)?C_OK:C_ZERO):null};
       if(!its.length){m.material.color.set(0x9aa59b);m.material.opacity=.18}
       else m.material.color.set(m.userData.base);
       g.add(m);pickables.push(m);
     }
-    if(bay!=='*'){const l=label(bay,.45);l.position.set(-W/2+i*BW+BW/2,.25,RD/2+.35);g.add(l)}
+    if(bay!=='*'){const l=label(bay,.45);l.position.set(-W/2+i*bw+bw/2,.25,RD/2+.35);g.add(l)}
   });
   const t=label(loc.z,.8);t.position.set(0,H+.8,(loc.side||0)*RD*.9);g.add(t);
   loc.group=g;loc.center=new THREE.Vector3(x,H/2,z);world.add(g);
@@ -196,19 +196,18 @@ function show(a){
   clear();current=a;
   document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.a===a));
   if(a==='Armazém 1'){
-    const racks=Array.from({length:20},(_,i)=>'Rack '+(i+1));
-    const W=6*BW;floor(5*(W+1.2)+6,4*(RD+3.2)+8);
-    racks.forEach((z,i)=>{
-      const row=Math.floor(i/5),col=i%5;
+    const MAP={6:[9,10,5,6],5:[11,12,5,6],4:[13,14,5,6],3:[15,15,7,9],18:[4,5,9,10],15:[6,7,9,10],11:[9,10,9,10],7:[12,13,9,10],12:[9,10,11,12],8:[12,13,11,12],19:[4,5,13,14],16:[6,7,13,14],2:[15,15,14,16],1:[17,17,14,16],13:[9,10,15,16],9:[12,13,15,16],20:[4,5,17,18],17:[6,7,17,18],14:[9,10,17,18],10:[12,13,17,18]};
+    // disposição real (folha ESQUEMA ARMAZÉM do Excel): coluna -> x, linha -> z
+    const CX=2.0,RZ=4.4;floor(38,66);
+    Object.entries(MAP).forEach(([n,[c1,c2,r1,r2]])=>{const z='Rack '+n;
       const used=new Set(items.filter(t=>t.a===a&&t.z===z).map(t=>t.l));
-      const bays=(used.size===1&&used.has(''))?['*']:BAYS;
-      const x=(col-2)*(W+1.2), zz=[-5.4,-4.2,4.2,5.4][row];
-      const loc={a,z,side:row%2?1:-1};locs.push(loc);buildRack(loc,x,zz,0,bays);
-    });
-    roof(5*(W+1.2)+6,4*(RD+3.2)+8);
-    // zona de paletes no chão (como na foto, à entrada)
-    for(let i=0;i<6;i++){const p=box(1.2,.15,1,0x8B6B43);p.position.set(-20+i*2.2,.075,13);world.add(p);const c=box(1,.6+((i*37)%5)*.15,.9,0xC9A97A);c.position.set(-20+i*2.2,.15+c.geometry.parameters.height/2,13);world.add(c)}
-    setCam(0,30,40);
+      const bays=(used.size===0||(used.size===1&&used.has('')))?['*']:BAYS;
+      const len=(r2-r1+1)*RZ*.95,bw=len/bays.length;
+      const x=((c1+c2)/2-10.5)*CX, zz=((r1+r2)/2-11.5)*RZ;
+      const loc={a,z};locs.push(loc);buildRack(loc,x,zz,Math.PI/2,bays,bw)});
+    for(let i=0;i<=10;i++){const ar=new THREE.Mesh(new THREE.TorusGeometry(19,.04,4,48,Math.PI),new THREE.MeshBasicMaterial({color:0x39433A,transparent:true,opacity:.3}));ar.position.set(0,0,-32+i*6.4);world.add(ar)}
+    const a2=box(1.5,3,66,0x9aa59b,{transparent:true,opacity:.35});a2.position.set(-19.5,1.5,0);world.add(a2);const l2=label('Armazém 2',.9);l2.position.set(-19.5,4,0);world.add(l2);
+    setCam(34,46,50);
   }else if(a==='Armazém 2'){
     floor(40,20);
     // Rack exterior: fila comprida encostada à parede (como na foto), chão + 3 níveis
