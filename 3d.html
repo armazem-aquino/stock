@@ -145,25 +145,24 @@ const box=(w,h,d,color,opts={})=>new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new
 
 // rack: 6 vãos (A–F) x 4 níveis (chão + 3)
 const BW=1.4,LH=1.25,RD=1.1;
-function buildRack(loc,x,z,rot,bays,bw=BW){
+function buildRack(loc,x,z,rot,levels,len=8.4){
+  // níveis em altura: A em baixo (chão) ... F em cima. '*' = rack sem letras (4 níveis genéricos)
   const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=rot;
-  const n=bays.length,W=n*bw,H=LEVELS.length*LH;
-  for(let i=0;i<=n;i++)for(const dz of[-RD/2,RD/2]){const p=box(.08,H+.2,.08,C_STEEL);p.position.set(-W/2+i*bw,(H+.2)/2,dz);g.add(p)}
-  for(let lv=1;lv<=LEVELS.length;lv++)for(const dz of[-RD/2,RD/2]){const b=box(W,.1,.08,C_BEAM);b.position.set(0,lv*LH-.05,dz);g.add(b)}
-  for(let lv=1;lv<LEVELS.length;lv++){const dk=box(W,.04,RD,C_WOOD);dk.position.set(0,lv*LH-.12,0);g.add(dk)}
-  bays.forEach((bay,i)=>{
-    const its=items.filter(t=>t.a===loc.a&&t.z===loc.z&&(bay==='*'||t.l===bay));
-    for(let lv=0;lv<LEVELS.length;lv++){
-      const m=box(bw*.82,LH*.62,RD*.8,0xffffff,{transparent:true,opacity:.92});
-      m.position.set(-W/2+i*bw+bw/2,lv*LH+LH*.32+.02,0);
-      m.userData={loc,bay,its,base:its.length?(its.some(t=>t.q>0)?C_OK:C_ZERO):null};
-      if(!its.length){m.material.color.set(0x9aa59b);m.material.opacity=.18}
-      else m.material.color.set(m.userData.base);
-      g.add(m);pickables.push(m);
-    }
-    if(bay!=='*'){const l=label(bay,.45);l.position.set(-W/2+i*bw+bw/2,.25,RD/2+.35);g.add(l)}
+  const gen=levels[0]==='*',L=gen?['*','*','*','*']:levels,nl=L.length,LHh=gen?LH:1.0,H=nl*LHh,W=len,ns=Math.max(2,Math.round(W/2.8));
+  for(let i=0;i<=ns;i++)for(const dz of[-RD/2,RD/2]){const p=box(.08,H+.2,.08,C_STEEL);p.position.set(-W/2+i*W/ns,(H+.2)/2,dz);g.add(p)}
+  for(let lv=1;lv<=nl;lv++)for(const dz of[-RD/2,RD/2]){const b=box(W,.1,.08,C_BEAM);b.position.set(0,lv*LHh-.05,dz);g.add(b)}
+  for(let lv=1;lv<nl;lv++){const dk=box(W,.04,RD,C_WOOD);dk.position.set(0,lv*LHh-.12,0);g.add(dk)}
+  L.forEach((lev,lv)=>{
+    const its=items.filter(t=>t.a===loc.a&&t.z===loc.z&&(gen||t.l===lev));
+    const m=box(W*.94,LHh*.6,RD*.8,0xffffff,{transparent:true,opacity:.92});
+    m.position.set(0,lv*LHh+LHh*.32+.02,0);
+    m.userData={loc,bay:lev,its,base:its.length?(its.some(t=>t.q>0)?C_OK:C_ZERO):null};
+    if(!its.length){m.material.color.set(0x9aa59b);m.material.opacity=.18}
+    else m.material.color.set(m.userData.base);
+    g.add(m);pickables.push(m);
+    if(!gen){const l=label(lev,.42);l.position.set(W/2+.55,lv*LHh+LHh*.4,0);g.add(l)}
   });
-  const t=label(loc.z,.8);t.position.set(0,H+.8,(loc.side||0)*RD*.9);g.add(t);
+  const t=label(loc.z,.8);t.position.set(0,H+.8,0);g.add(t);
   loc.group=g;loc.center=new THREE.Vector3(x,H/2,z);world.add(g);
 }
 function buildRings(loc,x,y,z){
@@ -202,16 +201,16 @@ function show(a){
     Object.entries(MAP).forEach(([n,[c1,c2,r1,r2]])=>{const z='Rack '+n;
       const used=new Set(items.filter(t=>t.a===a&&t.z===z).map(t=>t.l));
       const bays=(used.size===0||(used.size===1&&used.has('')))?['*']:BAYS;
-      const len=(r2-r1+1)*RZ*.95,bw=len/bays.length;
+      const len=(r2-r1+1)*RZ*.95;
       const x=((c1+c2)/2-10.5)*CX, zz=((r1+r2)/2-11.5)*RZ;
-      const loc={a,z};locs.push(loc);buildRack(loc,x,zz,Math.PI/2,bays,bw)});
+      const loc={a,z};locs.push(loc);buildRack(loc,x,zz,Math.PI/2,bays,len)});
     for(let i=0;i<=10;i++){const ar=new THREE.Mesh(new THREE.TorusGeometry(19,.04,4,48,Math.PI),new THREE.MeshBasicMaterial({color:0x39433A,transparent:true,opacity:.3}));ar.position.set(0,0,-32+i*6.4);world.add(ar)}
     const a2=box(1.5,3,66,0x9aa59b,{transparent:true,opacity:.35});a2.position.set(-19.5,1.5,0);world.add(a2);const l2=label('Armazém 2',.9);l2.position.set(-19.5,4,0);world.add(l2);
     setCam(34,46,50);
   }else if(a==='Armazém 2'){
     floor(40,20);
     // Rack exterior: fila comprida encostada à parede (como na foto), chão + 3 níveis
-    const loc={a,z:'Rack exterior'};locs.push(loc);buildRack(loc,-4,-7.6,0,Array(10).fill('*'));
+    const loc={a,z:'Rack exterior'};locs.push(loc);buildRack(loc,-4,-7.6,0,['*'],14);
     // Paletes 1–16 no chão
     const pals=zonesOf(a).filter(z=>z.startsWith('Palete'));
     pals.forEach((z,i)=>{const l={a,z};locs.push(l);buildBlock(l,-14+(i%8)*2.9,(Math.floor(i/8))*3.2+1.2)});
@@ -321,7 +320,7 @@ renderer.domElement.addEventListener('pointerup',e=>{
   const d=hit.object.userData;
   const its=d.bay==='*'?items.filter(t=>t.a===d.loc.a&&t.z===d.loc.z):d.its;
   highlight(m=>m.userData.loc===d.loc&&m.userData.bay===d.bay);
-  panel(d.loc.a,d.loc.z+(d.bay!=='*'?' · vão '+d.bay:''),resumo(its),its);
+  panel(d.loc.a,d.loc.z+(d.bay!=='*'?' · linha '+d.bay:''),resumo(its),its);
 });
 
 // --- arranque ---

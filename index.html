@@ -266,7 +266,7 @@ function vInv(){
     + '<div style="font-size:18px;font-weight:700;overflow-wrap:anywhere">'+esc(a.d)+'</div>'
     + '<div class="loc">Na lista: <b>'+fmt(a.q)+' '+esc(a.u)+'</b></div>'
     + '<div><label>Quantidade contada ('+esc(a.u)+')</label><input class="inp" id="iQ" type="number" inputmode="decimal" step="any" min="0" style="font-size:22px"></div>'
-    + '<div><label>' + (I.arm === 'Estaleiro' ? 'Patamar' : 'Nível') + ' (toque para marcar)</label><div class="niv" id="iNiv">' + (I.arm === 'Estaleiro' ? ['1','2','3'] : ['Chão','1','2','3']).map(n => '<button type="button" class="btn2' + (I.nv === n ? ' on' : '') + '" data-n="' + n + '">' + n + '</button>').join('') + '</div></div>'
+    + (I.arm === 'Armazém 1' || I.arm === 'Parafusaria' ? '' : '<div><label>' + (I.arm === 'Estaleiro' ? 'Patamar' : 'Nível') + ' (toque para marcar)</label><div class="niv" id="iNiv">' + (I.arm === 'Estaleiro' ? ['1','2','3'] : ['Chão','1','2','3']).map(n => '<button type="button" class="btn2' + (I.nv === n ? ' on' : '') + '" data-n="' + n + '">' + n + '</button>').join('') + '</div></div>')
     + (I.msg ? '<div class="msg '+I.msg[0]+'">'+esc(I.msg[1])+'</div>' : '')
     + '<button class="go" id="iGo"'+(I.busy?' disabled':'')+'>'+(I.busy?'A gravar…':'Gravar e seguinte')+'</button>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn2" id="iAnt"'+(I.i===0?' disabled':'')+'>← Anterior</button><button class="btn2" id="iSalta">Saltar →</button></div>'
@@ -283,7 +283,7 @@ function ligaInv(){
   if (!a) return;
   const q = $('iQ'); q.focus();
   q.onkeydown = e => { if (e.key === 'Enter') contar(q.value); };
-  $('iNiv').querySelectorAll('button').forEach(b => b.onclick = () => { I.nv = I.nv === b.dataset.n ? '' : b.dataset.n; $('iNiv').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.n === I.nv)); });
+  if ($('iNiv')) $('iNiv').querySelectorAll('button').forEach(b => b.onclick = () => { I.nv = I.nv === b.dataset.n ? '' : b.dataset.n; $('iNiv').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.n === I.nv)); });
   $('iGo').onclick = () => contar(q.value);
   $('iIgual').onclick = () => contar(String(a.q));
   $('iSalta').onclick = () => { I.i++; I.msg = null; render(); };

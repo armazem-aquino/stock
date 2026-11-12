@@ -1,5 +1,5 @@
 // Guarda o "esqueleto" da app para abrir depressa; os dados vêm sempre do servidor.
-const CACHE = 'stock-aquino-v8';
+const CACHE = 'stock-aquino-v9';
 const FILES = ['./', 'index.html', 'config.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'logo-aquino.png', 'logo-branco.png', '3d.html'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(k => Promise.all(k.filter(x => x !== CACHE).map(x => caches.delete(x))))); self.clients.claim(); });
